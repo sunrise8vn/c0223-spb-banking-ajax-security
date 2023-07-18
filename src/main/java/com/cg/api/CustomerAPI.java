@@ -10,6 +10,7 @@ import com.cg.utils.ValidateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -105,5 +106,19 @@ public class CustomerAPI {
         CustomerUpResDTO customerUpResDTO = customerUpdate.toCustomerUpResDTO();
 
         return new ResponseEntity<>(customerUpResDTO, HttpStatus.OK);
+    }
+
+
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @DeleteMapping("/{customerId}")
+    public ResponseEntity<?> delete(@PathVariable Long customerId) {
+
+        Customer customer = customerService.findById(customerId).orElseThrow(() -> {
+           throw new DataInputException("Customer ID not exists");
+        });
+
+        customerService.softDelete(customer);
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

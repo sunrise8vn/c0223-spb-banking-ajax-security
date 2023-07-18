@@ -31,4 +31,6 @@ public interface ICustomerService extends IGeneralService<Customer, Long> {
     void incrementBalance(Long id, BigDecimal amount);
 
     void transfer(Transfer transfer);
+
+    void softDelete(Customer customer);
 }

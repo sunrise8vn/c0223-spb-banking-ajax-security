@@ -1,10 +1,10 @@
 package com.cg.controller;
 
-import com.cg.model.Customer;
-import com.cg.model.Deposit;
-import com.cg.model.Transfer;
+import com.cg.model.*;
+import com.cg.model.enums.ERole;
 import com.cg.service.customer.ICustomerService;
 import com.cg.service.deposit.IDepositService;
+import com.cg.service.user.IUserService;
 import com.cg.utils.AppUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -29,13 +29,26 @@ public class CustomerController {
     private ICustomerService customerService;
 
     @Autowired
+    private IUserService userService;
+
+    @Autowired
     private IDepositService depositService;
+
 
     @GetMapping
     public String showListPage(Model model) {
         List<Customer> customers = customerService.findAll();
 
         model.addAttribute("customers", customers);
+
+        String username = appUtils.getPrincipalUsername();
+
+        User user = userService.getByUsername(username);
+        Role role = user.getRole();
+        String  roleCode = role.getCode();
+
+        model.addAttribute("username", username);
+        model.addAttribute("role", roleCode);
 
         return "customer/list";
     }

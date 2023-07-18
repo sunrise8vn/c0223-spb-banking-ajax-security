@@ -16,7 +16,11 @@
                 <h1>List of customers</h1>
             </div>
             <div class="col-lg-6 header-right-button">
-                <a href="#">
+                <button class="btn btn-outline-light">
+                    <i class="fas fa-user"></i>
+                    <span th:text="${username}"></span>
+                </button>
+                <a href="/histories/transfer">
                     <button class="btn btn-outline-light">
                         <i class="fas fa-history"></i>
                         Transfer histories
@@ -26,6 +30,12 @@
                     <i class="fas fa-user-plus"></i>
                     Add new customer
                 </button>
+                <a href="/logout">
+                    <button class="btn btn-outline-light">
+                        <i class="fas fa-arrow-alt-circle-right"></i>
+                        Logout
+                    </button>
+                </a>
             </div>
         </header>
 
@@ -80,7 +90,8 @@
                 updateCustomer: App.API_CUSTOMER,
                 incrementBalance: App.API_CUSTOMER,
                 deposit: App.API_DEPOSIT,
-                transfer: App.API_TRANSFER
+                transfer: App.API_TRANSFER,
+                delete: App.API_CUSTOMER
             },
             elements: {},
             loadData: {},
@@ -171,6 +182,15 @@
         }
 
         page.commands.renderFooter = (customerId) => {
+            const roleCode = '[[${role}]]'
+
+            const btnDeleteStr = `
+                <button class="btn btn-danger delete" data-id="${customerId}">
+                    <i class="fas fa-ban"></i>
+                    Delete
+                </button>
+            `;
+
             return `
                 <div class="container">
                     <button class="btn btn-secondary edit" data-id="${customerId}">
@@ -189,10 +209,7 @@
                         <i class="fas fa-exchange-alt"></i>
                         Transfer
                     </button>
-                    <button class="btn btn-danger delete" data-id="${customerId}">
-                        <i class="fas fa-ban"></i>
-                        Delete
-                    </button>
+                    ${roleCode === 'ADMIN' ? btnDeleteStr : '' }
                 </div>
             `;
         }
@@ -351,6 +368,31 @@
                 .catch((error) => {
                     console.log(error);
                 });
+        }
+
+        page.commands.handleShowConfirmDelete = (customerId) => {
+            App.showDeleteConfirmDialog().then((data) => {
+                if (data.isConfirmed) {
+                    $.ajax({
+                        type: 'DELETE',
+                        url: page.url.delete + '/' + customerId
+                    })
+                        .done(() => {
+                            App.showSuccessAlert('Đình chỉ tài khoản khách hàng thành công');
+                            $('#tr_' + customerId).remove();
+                        })
+                        .fail((jqXHR) => {
+                            console.log(jqXHR);
+                            const httpStatus = jqXHR.status;
+                            if (httpStatus === 403) {
+                                App.showErrorAlert('Bạn không đủ quyền để thực hiện chức năng này');
+                            }
+                            if (httpStatus === 401) {
+                                App.showErrorAlert('Vui lòng đăng nhập, tài khoản của bạn đã hết phiên làm việc');
+                            }
+                        })
+                }
+            })
         }
 
         page.dialogs.commands.create = () => {
@@ -631,6 +673,11 @@
             page.elements.footer.on('click', '.transfer', function () {
                 customerId = $(this).data('id');
                 page.commands.handleAddEventShowModalTransfer(customerId);
+            })
+
+            page.elements.footer.on('click', '.delete', function () {
+                customerId = $(this).data('id');
+                page.commands.handleShowConfirmDelete(customerId);
             })
 
             page.dialogs.elements.transferAmountTrf.on('change', function () {
